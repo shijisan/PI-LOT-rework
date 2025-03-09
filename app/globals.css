@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fafafa;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  color: var(--foreground);
+  font-family: "Roboto Flex", Arial, Helvetica, sans-serif;
+}
+
+.poppins{
+  font-family: "Poppins";
+}
+
+@layer base{
+  body{
+    @apply bg-neutral-50;
+  }
+  
+  input{
+    @apply border border-black/10 rounded-sm py-1 px-4 bg-background
+  }
+}
+
+@layer components{
+  .btn-primary{
+    @apply px-4 py-2 rounded bg-yellow-400 text-white font-medium hover:cursor-pointer hover:brightness-[99%] transition-all drop-shadow-sm
+  }
+
+  .btn-secondary{
+    @apply px-4 py-2 rounded bg-blue-500 text-white font-medium hover:cursor-pointer hover:brightness-[99%] transition-all drop-shadow-sm
+
+  }
+
+  .btn-dead{
+    @apply px-4 py-2 rounded bg-neutral-500 text-white font-medium hover:cursor-pointer hover:brightness-[99%] transition-all drop-shadow-sm
+
+  }
+
+  .btn-destructive{
+    @apply px-4 py-2 rounded bg-red-500 text-white font-medium hover:cursor-pointer hover:brightness-[99%] transition-all drop-shadow-sm
+  }
+
+  .link{
+    @apply text-blue-500 hover:underline
+  }
+
+  .card-sm{
+    @apply p-8 shadow-md rounded-lg max-w-sm w-full border-black/20 border bg-white
+  }
+
+  .card-lg{
+    @apply shadow-md rounded-lg w-full border-black/20 border bg-white
+  }
+
+  form label{
+    font-family: "Poppins";
+    @apply text-sm
+  }
+
+  aside{
+    font-family: "Poppins";
+    @apply py-1 
+  }
+
+  aside ul{
+    @apply flex flex-col
+  }
+
+  aside ul li{
+    @apply h-full w-full
+  }
+
+  aside ul li a{
+    @apply py-2 text-center block hover:backdrop-brightness-95
+  }
+}

@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id        String    @id @default(cuid()) // Unique ID for the organization
+  name      String    // Name of the organization
+  owner     User      @relation(fields: [ownerId], references: [id]) // Owner of the organization
+  ownerId   String    // Foreign key to the User model
+  members   Member[]  // List of members in the organization
+
+  @@map("organizations") // Optional: Map the model to a custom table name
+}
+
+model Member {
+  id             String       @id @default(cuid()) // Unique ID for the member
+  user           User         @relation(fields: [userId], references: [id]) // The user associated with this membership
+  userId         String       // Foreign key to the User model
+  organization   Organization @relation(fields: [organizationId], references: [id]) // The organization this member belongs to
+  organizationId String       // Foreign key to the Organization model
+  role           Role         // Role of the member in the organization (e.g., "owner", "moderator", "member")
+  label          String?      // Optional label for the member in this organization
+
+  @@map("members") // Optional: Map the model to a custom table name
+}
+
+model User {
+  id           String         @id @default(cuid()) // Unique ID for the user
+  email        String         @unique // Email of the user
+  password     String         // Password (hashed)
+  ownedOrgs    Organization[] // Organizations owned by the user
+  memberships  Member[]       // Memberships of the user in various organizations
+
+  @@map("users") // Optional: Map the model to a custom table name
+}
+
+// Enum for roles
+enum Role {
+  OWNER
+  MODERATOR
+  MEMBER
+}
