@@ -16,6 +16,7 @@ const verifyToken = async (token) => {
 
 export async function middleware(request) {
   try {
+    
     const cookieStore = await cookies();
     const tokenCookie = cookieStore.get('token');
 

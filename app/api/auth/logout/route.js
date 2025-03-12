@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 export async function POST() {
   try {
     // Access the cookies
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
 
     // Clear the 'token' cookie
     cookieStore.delete('token');

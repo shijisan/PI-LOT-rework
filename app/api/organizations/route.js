@@ -44,6 +44,9 @@ export async function POST(request) {
     }
 
     const userId = result.user.id;
+
+    console.log("User ID:", userId); // Debug log
+
     const { name } = await request.json();
 
     if (!name || name.trim() === "") {
