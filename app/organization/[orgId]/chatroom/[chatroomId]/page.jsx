@@ -13,7 +13,6 @@ export default function Chatroom({ params }) {
   const [newMessage, setNewMessage] = useState("");
   const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
-
   useEffect(() => {
     if (!orgId || !chatRoomId) {
       console.error("orgId or chatRoomId is undefined");
@@ -29,7 +28,7 @@ export default function Chatroom({ params }) {
           setError(data.error || "Failed to fetch user data");
           return;
         }
-        setUser(data.user);
+        setUser(data.user); // Set the user data
       } catch (error) {
         console.error("Error fetching user data:", error);
         setError("An unexpected error occurred");
@@ -37,24 +36,29 @@ export default function Chatroom({ params }) {
     };
 
     const fetchMessages = async () => {
-      const { data, error } = await supabaseClient
-        .from("messages")
-        .select(`
-          id, content, createdAt, 
-          sender:members!messages_senderId_fkey (
-            id,
-            user:users!members_userId_fkey (id, email)
-          )
-        `)
-        .eq("chatRoomId", chatRoomId)
-        .order("createdAt", { ascending: true });
+      try {
+        const { data, error } = await supabaseClient
+          .from("messages")
+          .select(`
+            id, content, createdAt, 
+            sender:members!messages_senderId_fkey (
+              id,
+              user:users!members_userId_fkey (id, email)
+            )
+          `)
+          .eq("chatRoomId", chatRoomId)
+          .order("createdAt", { ascending: true });
 
-      if (error) {
-        console.error("Error fetching messages:", error.message);
-        setError(error.message);
-        return;
+        if (error) {
+          console.error("Error fetching messages:", error.message);
+          setError(error.message);
+          return;
+        }
+        setMessages(data || []); // Ensure messages is always an array
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+        setError("An unexpected error occurred");
       }
-      setMessages(data);
     };
 
     fetchUserData();
@@ -92,12 +96,17 @@ export default function Chatroom({ params }) {
       return;
     }
 
+    if (!user) {
+      setError("User data is not available. Please refresh the page.");
+      return;
+    }
+
     try {
       const response = await fetch(`/api/organizations/${orgId}/chatrooms/${chatRoomId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: user?.id,
+          userId: user.id,
           content: newMessage,
         }),
       });
@@ -162,6 +171,11 @@ export default function Chatroom({ params }) {
     }
   };
 
+  // Conditional rendering to ensure data is loaded
+  if (!user || messages.length === 0) {
+    return <div className="p-8">Loading...</div>;
+  }
+
   return (
     <>
       <main className="md:max-w-[90vw] w-full mx-auto pt-[10vh] flex min-h-screen">
@@ -173,36 +187,44 @@ export default function Chatroom({ params }) {
             </div>
             <div className="p-8 flex flex-col h-[70vh]">
               <div className="flex-grow overflow-y-auto space-y-2">
-                {messages.map((message) => (
-                  <div key={message.id} className="flex flex-col bg-neutral-100 p-3 rounded-md">
-                    <p className="font-bold">{message.sender.user.email}</p>
-                    <p>{message.content}</p>
-                    <small className="text-gray-500">
-                      {new Date(message.createdAt).toLocaleString()}
-                    </small>
-                    {user.id === message.sender.user.id && (
-                      <div className="flex gap-2 mt-2">
-                        <button
-                          className="px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                          onClick={() => {
-                            const updatedContent = prompt("Edit your message:", message.content);
-                            if (updatedContent) {
-                              handleEditMessage(message.id, updatedContent);
-                            }
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
-                          onClick={() => handleDeleteMessage(message.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                {messages.map((message) => {
+                  // Null checks to prevent runtime errors
+                  if (!message.sender?.user) {
+                    console.warn("Message sender user data is missing:", message);
+                    return null; // Skip rendering this message
+                  }
+
+                  return (
+                    <div key={message.id} className="flex flex-col bg-neutral-100 p-3 rounded-md">
+                      <p className="font-bold">{message.sender.user.email}</p>
+                      <p>{message.content}</p>
+                      <small className="text-gray-500">
+                        {new Date(message.createdAt).toLocaleString()}
+                      </small>
+                      {user.id === message.sender.user.id && (
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            className="px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                            onClick={() => {
+                              const updatedContent = prompt("Edit your message:", message.content);
+                              if (updatedContent) {
+                                handleEditMessage(message.id, updatedContent);
+                              }
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
+                            onClick={() => handleDeleteMessage(message.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="flex gap-2 mt-4">
