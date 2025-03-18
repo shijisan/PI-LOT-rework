@@ -69,9 +69,31 @@ export default function Chatroom({ params }) {
       .channel(`chatroom:${chatRoomId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "messages", filter: `chatRoomId=eq.${chatRoomId}` },
-        (payload) => {
+        { event: "*", schema: "public", table: "messages" },
+        async (payload) => {
           console.log("Real-time update received:", payload);
+
+          // Check if sender data is missing
+          if (payload.new && !payload.new.sender) {
+            try {
+              const { data: senderData } = await supabaseClient
+                .from("members")
+                .select(`
+                id,
+                user:users!members_userId_fkey (id, email)
+              `)
+                .eq("id", payload.new.senderId)
+                .single();
+
+              payload.new.sender = senderData; // Attach sender details to the payload
+            } catch (error) {
+              console.error("Error fetching sender data:", error);
+              setError("Failed to load sender details");
+              return;
+            }
+          }
+
+          // Update messages based on the event type
           if (payload.eventType === "INSERT") {
             setMessages((prev) => [...prev, payload.new]);
           } else if (payload.eventType === "UPDATE") {
@@ -84,6 +106,7 @@ export default function Chatroom({ params }) {
         }
       )
       .subscribe();
+
 
     return () => {
       supabaseClient.removeChannel(subscription);
@@ -172,7 +195,7 @@ export default function Chatroom({ params }) {
   };
 
   // Conditional rendering to ensure data is loaded
-  if (!user || messages.length === 0) {
+  if (!user) {
     return <div className="p-8">Loading...</div>;
   }
 
